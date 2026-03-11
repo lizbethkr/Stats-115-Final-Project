@@ -14,7 +14,8 @@ music <- music %>%
 music <- music %>% 
   mutate(
     song.year = ifelse(song.year == 0, NA, song.year),
-    song.hotttnesss = ifelse(song.hotttnesss < 0, NA, song.hotttnesss)
+    song.hotttnesss = ifelse(song.hotttnesss < 0, NA, song.hotttnesss),
+    song.hotttnesss = ifelse(song.hotttnesss == 0, NA, song.hotttnesss)
     )
 
 # convert columns to categories

@@ -95,7 +95,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="analysis_files/libs/revealjs/dist/theme/quarto-534cd8e3a96973385dffff3f4709048d.css">
+  <link rel="stylesheet" href="analysis_files/libs/revealjs/dist/theme/quarto-832775eafbd512325564c8c290c39367.css">
   <link href="analysis_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="analysis_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="analysis_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -187,6 +187,10 @@
       margin-right: 0; 
     }
   </style>
+  <script src="analysis_files/libs/kePrint-0.0.1/kePrint.js"></script>
+
+  <link href="analysis_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
 </head>
 <body class="quarto-light">
   <div class="reveal">
@@ -224,18 +228,19 @@ Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="co"># load libraries</span></span>
 <span id="cb1-2"><a href=""></a><span class="fu">library</span>(bayesrules)</span>
-<span id="cb1-3"><a href=""></a><span class="fu">library</span>(rstanarm)</span>
-<span id="cb1-4"><a href=""></a><span class="fu">library</span>(bayesplot)</span>
-<span id="cb1-5"><a href=""></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-6"><a href=""></a><span class="fu">library</span>(broom.mixed)</span>
-<span id="cb1-7"><a href=""></a><span class="fu">library</span>(tidybayes)</span>
-<span id="cb1-8"><a href=""></a></span>
-<span id="cb1-9"><a href=""></a><span class="co"># load dataset</span></span>
-<span id="cb1-10"><a href=""></a>music <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/music_clean.csv"</span>)</span>
-<span id="cb1-11"><a href=""></a></span>
-<span id="cb1-12"><a href=""></a><span class="do">## filter 0 song.hottnesss scores</span></span>
-<span id="cb1-13"><a href=""></a>music <span class="ot">&lt;-</span> music <span class="sc">%&gt;%</span> <span class="fu">filter</span>(song.hotttnesss <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb1-14"><a href=""></a><span class="fu">dim</span>(music)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href=""></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-4"><a href=""></a><span class="fu">library</span>(rstanarm)</span>
+<span id="cb1-5"><a href=""></a><span class="fu">library</span>(bayesplot)</span>
+<span id="cb1-6"><a href=""></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-7"><a href=""></a><span class="fu">library</span>(broom.mixed)</span>
+<span id="cb1-8"><a href=""></a><span class="fu">library</span>(tidybayes)</span>
+<span id="cb1-9"><a href=""></a></span>
+<span id="cb1-10"><a href=""></a><span class="co"># load dataset</span></span>
+<span id="cb1-11"><a href=""></a>music <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/music_clean.csv"</span>)</span>
+<span id="cb1-12"><a href=""></a></span>
+<span id="cb1-13"><a href=""></a><span class="do">## filter 0 song.hottnesss scores</span></span>
+<span id="cb1-14"><a href=""></a>music <span class="ot">&lt;-</span> music <span class="sc">%&gt;%</span> <span class="fu">filter</span>(song.hotttnesss <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb1-15"><a href=""></a><span class="fu">dim</span>(music)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Song popularity contains a large number of exact zeros, likely reflecting missing data rather than true popularity scores. These observations were excluded prior to analysis.</p>
 <p>The processed dataset contains 4214 rows and 31 features.</p>
@@ -405,8 +410,8 @@ Y_i \sim N(\mu_i, \sigma) \\
 <pre><code>
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 9.8e-05 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
+Chain 1: Gradient evaluation took 4.8e-05 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -423,9 +428,9 @@ Chain 1: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 1: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 1: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 0.047 seconds (Warm-up)
-Chain 1:                0.402 seconds (Sampling)
-Chain 1:                0.449 seconds (Total)
+Chain 1:  Elapsed Time: 0.048 seconds (Warm-up)
+Chain 1:                0.407 seconds (Sampling)
+Chain 1:                0.455 seconds (Total)
 Chain 1: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -448,15 +453,15 @@ Chain 2: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 2: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 2: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 2: 
-Chain 2:  Elapsed Time: 0.044 seconds (Warm-up)
-Chain 2:                0.401 seconds (Sampling)
-Chain 2:                0.445 seconds (Total)
+Chain 2:  Elapsed Time: 0.047 seconds (Warm-up)
+Chain 2:                0.402 seconds (Sampling)
+Chain 2:                0.449 seconds (Total)
 Chain 2: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 Chain 3: 
-Chain 3: Gradient evaluation took 9e-06 seconds
-Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
+Chain 3: Gradient evaluation took 1.3e-05 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
 Chain 3: Adjust your expectations accordingly!
 Chain 3: 
 Chain 3: 
@@ -474,14 +479,14 @@ Chain 3: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 3: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 3: 
 Chain 3:  Elapsed Time: 0.047 seconds (Warm-up)
-Chain 3:                0.399 seconds (Sampling)
-Chain 3:                0.446 seconds (Total)
+Chain 3:                0.397 seconds (Sampling)
+Chain 3:                0.444 seconds (Total)
 Chain 3: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 Chain 4: 
-Chain 4: Gradient evaluation took 1.2e-05 seconds
-Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+Chain 4: Gradient evaluation took 7e-06 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 Chain 4: Adjust your expectations accordingly!
 Chain 4: 
 Chain 4: 
@@ -499,8 +504,8 @@ Chain 4: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 4: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 4: 
 Chain 4:  Elapsed Time: 0.047 seconds (Warm-up)
-Chain 4:                0.398 seconds (Sampling)
-Chain 4:                0.445 seconds (Total)
+Chain 4:                0.397 seconds (Sampling)
+Chain 4:                0.444 seconds (Total)
 Chain 4: </code></pre>
 </div>
 </div>
@@ -626,8 +631,8 @@ See help('prior_summary.stanreg') for more details</code></pre>
 </div>
 </div>
 <ul>
-<li><strong>Rhat</strong> close to 1 (&lt; 1.01) which indicates convergence</li>
-<li><strong>N-eff ratio</strong> &gt; 0.1 which indicates efficient sampling</li>
+<li>Rhat close to 1 (&lt; 1.01) which indicates convergence</li>
+<li>N-eff ratio &gt; 0.1 which indicates efficient sampling</li>
 </ul>
 <aside class="notes">
 <p>Effective sample size ratios are reasonably large, indicating efficient posterior sampling. R-hat values are all very close to 1, providing further evidence that the chains converged. Overall, the diagnostics confirm the posterior samples are reliable for inference.</p>
@@ -647,14 +652,14 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <h2>Posterior Summary</h2>
 <div class="cell">
 <div class="cell-output-display">
-<table class="caption-top">
+<table class="table caption-top" style="font-size: 18px; margin-left: auto; margin-right: auto;">
 <thead>
 <tr class="header">
-<th style="text-align: left;">term</th>
-<th style="text-align: right;">estimate</th>
-<th style="text-align: right;">std.error</th>
-<th style="text-align: right;">conf.low</th>
-<th style="text-align: right;">conf.high</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
 </tr>
 </thead>
 <tbody>

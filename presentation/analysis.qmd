@@ -4,6 +4,7 @@ author: "Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim"
 format:
   revealjs:
     html-math-method: mathjax
+    theme: solarized
 ---
 
 # 1. Introduction
@@ -23,6 +24,7 @@ This analysis explores three research questions:
 ```{r echo=TRUE, results='hide',message=FALSE, warning=FALSE}
 # load libraries
 library(bayesrules)
+library(kableExtra)
 library(rstanarm)
 library(bayesplot)
 library(tidyverse)
@@ -216,8 +218,8 @@ rhat(song_model1)
 neff_ratio(song_model1)
 ```
 
-- **Rhat** close to 1 (< 1.01) which indicates convergence
-- **N-eff ratio**  > 0.1 which indicates efficient sampling
+- Rhat close to 1 (< 1.01) which indicates convergence
+- N-eff ratio  > 0.1 which indicates efficient sampling
 
 ::: {.notes}
 Effective sample size ratios are reasonably large, indicating efficient posterior sampling. R-hat values are all very close to 1, providing further evidence that the chains converged. Overall, the diagnostics confirm the posterior samples are reliable for inference.
@@ -227,7 +229,8 @@ Effective sample size ratios are reasonably large, indicating efficient posterio
 ```{r}
 tidy(song_model1, conf.int = TRUE) %>%
   mutate(across(where(is.numeric), round, 3)) %>%
-  knitr::kable()
+  knitr::kable() %>%
+  kable_styling(font_size = 18)
 ```
 
 - Intercept (0.503): Baseline popularity when predictors are zero.

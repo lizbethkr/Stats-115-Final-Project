@@ -1,59 +1,198 @@
 ---
-title: "analysis"
+title: "A Bayesian Analysis of Song/Artist Features and Popularity"
 author: "Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim"
-format: revealjs
+format:
+  revealjs:
+    html-math-method: mathjax
 ---
 
-## 1. Introduction
+# 1. Introduction
 
 This project analyzes factors influencing song popularity using Bayesian modeling.
 
-## 2. Research Questions
+# 2. Research Questions
 
 This analysis explores three research questions:
 
-1. What song features most strongly predict song popularity?
-2. Has the relationship between song loudness and popularity changed over time?
-3. How much of song popularity comes from artist effects?
+1.  What song features most strongly predict song popularity?
+2.  Has the relationship between song loudness and popularity changed over time?
+3.  How much of song popularity comes from artist effects?
 
-## 3. Data Preparation
+# 3. Data Preparation
 
 ```{r echo=TRUE, results='hide',message=FALSE, warning=FALSE}
 # load libraries
 library(bayesrules)
-library(tidyverse)
-library(rstan)
+library(rstanarm)
 library(bayesplot)
+library(tidyverse)
 library(broom.mixed)
+library(tidybayes)
 
 # load dataset
 music <- read_csv("../data/music_clean.csv")
-```
-## 4. Analysis
-## Question 1: What song features most strongly predict song popularity?
-```{r}
-# EDA
-# Model
-# Results 
-```
-#### Interpretation
 
-## Question 2: Has the relationship between song loudness and popularity changed over time?
-```{r}
-# EDA
-# Model
-# Results 
+## filter 0 song.hottnesss scores
+music <- music %>% filter(song.hotttnesss > 0)
+dim(music)
 ```
-#### Interpretation
+Song popularity contains a large number of exact zeros, likely reflecting missing data rather than true popularity scores. These observations were excluded prior to analysis.
 
-## Question 3: How much of song popularity comes from artist effects?
-```{r}
-# EDA
-# Model
-# Results 
+The processed dataset contains 4214 rows and 31 features.
+
+
+# 4. Analysis
+# Question 1: What song features most strongly predict song popularity?
+
+## Question Introduction
+
+To investigate which song characteristics predict popularity, we fit a Bayesian multiple linear regression model. Song popularity (song.hottness) which ranges from 0 to 1, and a higher value indicates more popular songs. The predictors considered are: 
+
+- song tempo (in beats per minute) 
+- song duration (seconds) 
+- song loudness (general loudness )
+
+We use Bayesian linear regression to estimate how these features are associated with popularity.
+
+
+## Exploratory Data Analysis
+
+Before fitting the model, we examined the relationships between the predictors and popularity.
+
+:::: {.columns}
+
+::: {.column width="50%"}
+```{r tempo}
+ggplot(music, aes(song.tempo, song.hotttnesss)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "loess") +
+  labs(title = "Popularity vs Tempo",
+       x = "Tempo (BPM)",
+       y = "Song Popularity")
 ```
-#### Interpretation
+:::
+
+::: {.column width="50%"}
+```{r duration}
+ggplot(music, aes(song.duration, song.hotttnesss)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "loess") +
+  coord_cartesian(xlim = c(0, 600)) +
+  labs(title = "Popularity vs Duration",
+       x = "Duration (seconds)",
+       y = "Song Popularity")
+```
+:::
+
+::::
+
+:::: {.columns}
+
+::: {.column width="25%"}
+:::
+
+::: {.column width="50%"}
+```{r loudness}
+ggplot(music, aes(song.loudness, song.hotttnesss)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "loess") +
+  labs(title = "Popularity vs Loudness",
+       x = "Loudness (dB)",
+       y = "Song Popularity")
+```
+:::
+
+::: {.column width="25%"}
+:::
+
+::::
+
+## Bayesian Regression Model
+
+$$
+\begin{gather}
+Y_i \sim N(\mu_i, \sigma) \\ 
+\mu_i = \beta_0 + \beta_1 \text{tempo}_i + \beta_2 \text{duration}_i + \beta_3 \text{loudness}_i
+\end{gather}
+$$
+
+where: 
+
+- $\beta_0$ = intercept
+- $\beta_1, \beta_2, \beta_3$ = effects of song features
+- $\sigma$ = residual variation in popularity
+
+## Prior Distributions
+Weakly informative priors are used for the regression parameters. These priors allow moderate relationships while preventing unrealistic coefficient estimates.
+$$
+\begin{gather}
+\beta_0 \sim Normal(0,1) \\
+\beta_1, \beta_2, \beta_3 \sim Normal(0,2.5) \\
+\sigma \sim Exponential(1)
+\end{gather}
+$$
+
+## Fit the Model 
+
+This model estimates the posterior distribution of each coefficient using Markov Chain Monte Carlo (MCMC).
+```{r}
+#| echo: true
+song_model1 <- stan_glm(
+  song.hotttnesss ~ song.tempo + song.duration + song.loudness,
+  data = music,
+  family = gaussian,
+
+  prior_intercept = normal(0,1),
+  prior = normal(0,2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+
+  chains = 4,
+  iter = 4000,
+  seed = 123
+)
+```
+## Prior Specification
+The prior distributions used in the model. The priors are weakly informative, allowing the data to drive estiamtes.
+```{r}
+prior_summary(song_model1)
+```
+
+## MCMC Diagnostics 
+To ensure the MCMC chains converged properly, we examine the diagnostic plots.
+```{r}
+mcmc_trace(song_model1, size = 0.2)
+mcmc_dens_overlay(song_model1)
+mcmc_acf(song_model1)
+neff_ratio(song_model1)
+rhat(song_model1)
+```
+
+## Posterior Summary
+```{r}
+tidy(song_model1, conf.int = TRUE)
+```
+
+## Posterior Predictive Check
+```{r}
+pp_check(song_model1)
+```
+
+## Interpretation
+The Bayesian regression analysis suggests that tempo, duration, and loudness have limited predictive power for explaining song popularity on their own. While these musical features possibly have some contribution to song popularity, the large variability indicates that other factors play a bigger role.
+
+These factors possibly include artist-level details such as artist popularity, artist familiarity, or location. Future models could incorporate additional variables to better understand the complexities of song popularity.
+
+
+# Question 2: Has the relationship between song loudness and popularity changed over time?
+
+
+# Question 3: How much of song popularity comes from artist effects?
+
 
 ## 5. Conclusion
 
+### Results
 
+### Limitations
+
+### Future Research

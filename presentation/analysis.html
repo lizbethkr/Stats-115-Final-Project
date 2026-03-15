@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.8.25">
 
   <meta name="author" content="Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim">
-  <title>analysis</title>
+  <title>A Bayesian Analysis of Song/Artist Features and Popularity</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -193,7 +193,7 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">analysis</h1>
+  <h1 class="title">A Bayesian Analysis of Song/Artist Features and Popularity</h1>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -204,12 +204,13 @@ Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim
 </div>
 
 </section>
-<section id="introduction" class="slide level2">
-<h2>1. Introduction</h2>
+<section id="introduction" class="title-slide slide level1 center">
+<h1>1. Introduction</h1>
 <p>This project analyzes factors influencing song popularity using Bayesian modeling.</p>
 </section>
-<section id="research-questions" class="slide level2">
-<h2>2. Research Questions</h2>
+
+<section id="research-questions" class="title-slide slide level1 center">
+<h1>2. Research Questions</h1>
 <p>This analysis explores three research questions:</p>
 <ol type="1">
 <li>What song features most strongly predict song popularity?</li>
@@ -217,39 +218,338 @@ Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim
 <li>How much of song popularity comes from artist effects?</li>
 </ol>
 </section>
-<section id="data-preparation" class="slide level2">
-<h2>3. Data Preparation</h2>
+
+<section id="data-preparation" class="title-slide slide level1 center">
+<h1>3. Data Preparation</h1>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="co"># load libraries</span></span>
 <span id="cb1-2"><a href=""></a><span class="fu">library</span>(bayesrules)</span>
-<span id="cb1-3"><a href=""></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-4"><a href=""></a><span class="fu">library</span>(rstan)</span>
-<span id="cb1-5"><a href=""></a><span class="fu">library</span>(bayesplot)</span>
+<span id="cb1-3"><a href=""></a><span class="fu">library</span>(rstanarm)</span>
+<span id="cb1-4"><a href=""></a><span class="fu">library</span>(bayesplot)</span>
+<span id="cb1-5"><a href=""></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-6"><a href=""></a><span class="fu">library</span>(broom.mixed)</span>
-<span id="cb1-7"><a href=""></a></span>
-<span id="cb1-8"><a href=""></a><span class="co"># load dataset</span></span>
-<span id="cb1-9"><a href=""></a>music <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/music_clean.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-7"><a href=""></a><span class="fu">library</span>(tidybayes)</span>
+<span id="cb1-8"><a href=""></a></span>
+<span id="cb1-9"><a href=""></a><span class="co"># load dataset</span></span>
+<span id="cb1-10"><a href=""></a>music <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"../data/music_clean.csv"</span>)</span>
+<span id="cb1-11"><a href=""></a></span>
+<span id="cb1-12"><a href=""></a><span class="do">## filter 0 song.hottnesss scores</span></span>
+<span id="cb1-13"><a href=""></a>music <span class="ot">&lt;-</span> music <span class="sc">%&gt;%</span> <span class="fu">filter</span>(song.hotttnesss <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb1-14"><a href=""></a><span class="fu">dim</span>(music)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Song popularity contains a large number of exact zeros, likely reflecting missing data rather than true popularity scores. These observations were excluded prior to analysis.</p>
+<p>The processed dataset contains 4214 rows and 31 features.</p>
+</section>
+
+<section id="analysis" class="title-slide slide level1 center">
+<h1>4. Analysis</h1>
+
+</section>
+
+<section>
+<section id="question-1-what-song-features-most-strongly-predict-song-popularity" class="title-slide slide level1 center">
+<h1>Question 1: What song features most strongly predict song popularity?</h1>
+
+</section>
+<section id="question-introduction" class="slide level2">
+<h2>Question Introduction</h2>
+<p>To investigate which song characteristics predict popularity, we fit a Bayesian multiple linear regression model. Song popularity (song.hottness) which ranges from 0 to 1, and a higher value indicates more popular songs. The predictors considered are:</p>
+<ul>
+<li>song tempo (in beats per minute)</li>
+<li>song duration (seconds)</li>
+<li>song loudness (general loudness )</li>
+</ul>
+<p>We use Bayesian linear regression to estimate how these features are associated with popularity.</p>
+</section>
+<section id="exploratory-data-analysis" class="slide level2">
+<h2>Exploratory Data Analysis</h2>
+<p>Before fitting the model, we examined the relationships between the predictors and popularity.</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/tempo-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/duration-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</div></div>
+<div class="columns">
+<div class="column" style="width:25%;">
+
+</div><div class="column" style="width:50%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/loudness-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:25%;">
+
+</div></div>
+</section>
+<section id="bayesian-regression-model" class="slide level2">
+<h2>Bayesian Regression Model</h2>
+<p><span class="math display">\[
+\begin{gather}
+Y_i \sim N(\mu_i, \sigma) \\
+\mu_i = \beta_0 + \beta_1 \text{tempo}_i + \beta_2 \text{duration}_i + \beta_3 \text{loudness}_i
+\end{gather}
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\beta_0\)</span> = intercept</li>
+<li><span class="math inline">\(\beta_1, \beta_2, \beta_3\)</span> = effects of song features</li>
+<li><span class="math inline">\(\sigma\)</span> = residual variation in popularity</li>
+</ul>
+</section>
+<section id="prior-distributions" class="slide level2">
+<h2>Prior Distributions</h2>
+<p>Weakly informative priors are used for the regression parameters. These priors allow moderate relationships while preventing unrealistic coefficient estimates. <span class="math display">\[
+\begin{gather}
+\beta_0 \sim Normal(0,1) \\
+\beta_1, \beta_2, \beta_3 \sim Normal(0,2.5) \\
+\sigma \sim Exponential(1)
+\end{gather}
+\]</span></p>
+</section>
+<section id="fit-the-model" class="slide level2">
+<h2>Fit the Model</h2>
+<p>This model estimates the posterior distribution of each coefficient using Markov Chain Monte Carlo (MCMC).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a>song_model1 <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(</span>
+<span id="cb2-2"><a href=""></a>  song.hotttnesss <span class="sc">~</span> song.tempo <span class="sc">+</span> song.duration <span class="sc">+</span> song.loudness,</span>
+<span id="cb2-3"><a href=""></a>  <span class="at">data =</span> music,</span>
+<span id="cb2-4"><a href=""></a>  <span class="at">family =</span> gaussian,</span>
+<span id="cb2-5"><a href=""></a></span>
+<span id="cb2-6"><a href=""></a>  <span class="at">prior_intercept =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="dv">1</span>),</span>
+<span id="cb2-7"><a href=""></a>  <span class="at">prior =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="fl">2.5</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-8"><a href=""></a>  <span class="at">prior_aux =</span> <span class="fu">exponential</span>(<span class="dv">1</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-9"><a href=""></a></span>
+<span id="cb2-10"><a href=""></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb2-11"><a href=""></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb2-12"><a href=""></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb2-13"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+Chain 1: 
+Chain 1: Gradient evaluation took 7.3e-05 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.73 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 4000 [  0%]  (Warmup)
+Chain 1: Iteration:  400 / 4000 [ 10%]  (Warmup)
+Chain 1: Iteration:  800 / 4000 [ 20%]  (Warmup)
+Chain 1: Iteration: 1200 / 4000 [ 30%]  (Warmup)
+Chain 1: Iteration: 1600 / 4000 [ 40%]  (Warmup)
+Chain 1: Iteration: 2000 / 4000 [ 50%]  (Warmup)
+Chain 1: Iteration: 2001 / 4000 [ 50%]  (Sampling)
+Chain 1: Iteration: 2400 / 4000 [ 60%]  (Sampling)
+Chain 1: Iteration: 2800 / 4000 [ 70%]  (Sampling)
+Chain 1: Iteration: 3200 / 4000 [ 80%]  (Sampling)
+Chain 1: Iteration: 3600 / 4000 [ 90%]  (Sampling)
+Chain 1: Iteration: 4000 / 4000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 0.053 seconds (Warm-up)
+Chain 1:                0.415 seconds (Sampling)
+Chain 1:                0.468 seconds (Total)
+Chain 1: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+Chain 2: 
+Chain 2: Gradient evaluation took 8e-06 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+Chain 2: Adjust your expectations accordingly!
+Chain 2: 
+Chain 2: 
+Chain 2: Iteration:    1 / 4000 [  0%]  (Warmup)
+Chain 2: Iteration:  400 / 4000 [ 10%]  (Warmup)
+Chain 2: Iteration:  800 / 4000 [ 20%]  (Warmup)
+Chain 2: Iteration: 1200 / 4000 [ 30%]  (Warmup)
+Chain 2: Iteration: 1600 / 4000 [ 40%]  (Warmup)
+Chain 2: Iteration: 2000 / 4000 [ 50%]  (Warmup)
+Chain 2: Iteration: 2001 / 4000 [ 50%]  (Sampling)
+Chain 2: Iteration: 2400 / 4000 [ 60%]  (Sampling)
+Chain 2: Iteration: 2800 / 4000 [ 70%]  (Sampling)
+Chain 2: Iteration: 3200 / 4000 [ 80%]  (Sampling)
+Chain 2: Iteration: 3600 / 4000 [ 90%]  (Sampling)
+Chain 2: Iteration: 4000 / 4000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 0.047 seconds (Warm-up)
+Chain 2:                0.406 seconds (Sampling)
+Chain 2:                0.453 seconds (Total)
+Chain 2: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
+Chain 3: 
+Chain 3: Gradient evaluation took 7e-06 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+Chain 3: Adjust your expectations accordingly!
+Chain 3: 
+Chain 3: 
+Chain 3: Iteration:    1 / 4000 [  0%]  (Warmup)
+Chain 3: Iteration:  400 / 4000 [ 10%]  (Warmup)
+Chain 3: Iteration:  800 / 4000 [ 20%]  (Warmup)
+Chain 3: Iteration: 1200 / 4000 [ 30%]  (Warmup)
+Chain 3: Iteration: 1600 / 4000 [ 40%]  (Warmup)
+Chain 3: Iteration: 2000 / 4000 [ 50%]  (Warmup)
+Chain 3: Iteration: 2001 / 4000 [ 50%]  (Sampling)
+Chain 3: Iteration: 2400 / 4000 [ 60%]  (Sampling)
+Chain 3: Iteration: 2800 / 4000 [ 70%]  (Sampling)
+Chain 3: Iteration: 3200 / 4000 [ 80%]  (Sampling)
+Chain 3: Iteration: 3600 / 4000 [ 90%]  (Sampling)
+Chain 3: Iteration: 4000 / 4000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 0.05 seconds (Warm-up)
+Chain 3:                0.421 seconds (Sampling)
+Chain 3:                0.471 seconds (Total)
+Chain 3: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
+Chain 4: 
+Chain 4: Gradient evaluation took 7e-06 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+Chain 4: Adjust your expectations accordingly!
+Chain 4: 
+Chain 4: 
+Chain 4: Iteration:    1 / 4000 [  0%]  (Warmup)
+Chain 4: Iteration:  400 / 4000 [ 10%]  (Warmup)
+Chain 4: Iteration:  800 / 4000 [ 20%]  (Warmup)
+Chain 4: Iteration: 1200 / 4000 [ 30%]  (Warmup)
+Chain 4: Iteration: 1600 / 4000 [ 40%]  (Warmup)
+Chain 4: Iteration: 2000 / 4000 [ 50%]  (Warmup)
+Chain 4: Iteration: 2001 / 4000 [ 50%]  (Sampling)
+Chain 4: Iteration: 2400 / 4000 [ 60%]  (Sampling)
+Chain 4: Iteration: 2800 / 4000 [ 70%]  (Sampling)
+Chain 4: Iteration: 3200 / 4000 [ 80%]  (Sampling)
+Chain 4: Iteration: 3600 / 4000 [ 90%]  (Sampling)
+Chain 4: Iteration: 4000 / 4000 [100%]  (Sampling)
+Chain 4: 
+Chain 4:  Elapsed Time: 0.05 seconds (Warm-up)
+Chain 4:                0.415 seconds (Sampling)
+Chain 4:                0.465 seconds (Total)
+Chain 4: </code></pre>
+</div>
 </div>
 </section>
-<section id="analysis" class="slide level2">
-<h2>4. Analysis</h2>
+<section id="prior-specification" class="slide level2">
+<h2>Prior Specification</h2>
+<p>The prior distributions used in the model. The priors are weakly informative, allowing the data to drive estiamtes.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Priors for model 'song_model1' 
+------
+Intercept (after predictors centered)
+ ~ normal(location = 0, scale = 1)
+
+Coefficients
+  Specified prior:
+    ~ normal(location = [0,0,0], scale = [2.5,2.5,2.5])
+  Adjusted prior:
+    ~ normal(location = [0,0,0], scale = [0.0121,0.0041,0.0835])
+
+Auxiliary (sigma)
+  Specified prior:
+    ~ exponential(rate = 1)
+  Adjusted prior:
+    ~ exponential(rate = 5.9)
+------
+See help('prior_summary.stanreg') for more details</code></pre>
+</div>
+</div>
 </section>
-<section id="question-1-what-song-features-most-strongly-predict-song-popularity" class="slide level2">
-<h2>Question 1: What song features most strongly predict song popularity?</h2>
-<h4 id="interpretation">Interpretation</h4>
+<section id="mcmc-diagnostics" class="slide level2">
+<h2>MCMC Diagnostics</h2>
+<p>To ensure the MCMC chains converged properly, we examine the diagnostic plots.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept)    song.tempo song.duration song.loudness         sigma 
+     1.232250      1.388250      1.451500      1.330500      1.474375 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept)    song.tempo song.duration song.loudness         sigma 
+    0.9996798     0.9996558     0.9996623     0.9999041     0.9998327 </code></pre>
+</div>
+</div>
 </section>
-<section id="question-2-has-the-relationship-between-song-loudness-and-popularity-changed-over-time" class="slide level2">
-<h2>Question 2: Has the relationship between song loudness and popularity changed over time?</h2>
-<h4 id="interpretation-1">Interpretation</h4>
+<section id="posterior-summary" class="slide level2">
+<h2>Posterior Summary</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 5
+  term             estimate std.error   conf.low conf.high
+  &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)    0.503      0.0132     0.482     0.524    
+2 song.tempo     0.000189   0.0000750  0.0000658 0.000313 
+3 song.duration -0.00000688 0.0000243 -0.0000479 0.0000330
+4 song.loudness  0.00685    0.000521   0.00601   0.00768  </code></pre>
+</div>
+</div>
 </section>
-<section id="question-3-how-much-of-song-popularity-comes-from-artist-effects" class="slide level2">
-<h2>Question 3: How much of song popularity comes from artist effects?</h2>
-<h4 id="interpretation-2">Interpretation</h4>
+<section id="posterior-predictive-check" class="slide level2">
+<h2>Posterior Predictive Check</h2>
+
+<img data-src="analysis_files/figure-revealjs/unnamed-chunk-6-1.png" width="960" class="r-stretch"></section>
+<section id="interpretation" class="slide level2">
+<h2>Interpretation</h2>
+<p>The Bayesian regression analysis suggests that tempo, duration, and loudness have limited predictive power for explaining song popularity on their own. While these musical features possibly have some contribution to song popularity, the large variability indicates that other factors play a bigger role.</p>
+<p>These factors possibly include artist-level details such as artist popularity, artist familiarity, or location. Future models could incorporate additional variables to better understand the complexities of song popularity.</p>
+</section></section>
+<section id="question-2-has-the-relationship-between-song-loudness-and-popularity-changed-over-time" class="title-slide slide level1 center">
+<h1>Question 2: Has the relationship between song loudness and popularity changed over time?</h1>
+
+</section>
+
+<section>
+<section id="question-3-how-much-of-song-popularity-comes-from-artist-effects" class="title-slide slide level1 center">
+<h1>Question 3: How much of song popularity comes from artist effects?</h1>
+
 </section>
 <section id="conclusion" class="slide level2">
 <h2>5. Conclusion</h2>
+<h3 id="results">Results</h3>
+<h3 id="limitations">Limitations</h3>
+<h3 id="future-research">Future Research</h3>
 
-</section>
+</section></section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">
@@ -439,7 +739,7 @@ Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim
         margin: 0.1,
 
         math: {
-          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
+          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js',
           config: 'TeX-AMS_HTML-full',
           tex2jax: {
             inlineMath: [['\\(','\\)']],

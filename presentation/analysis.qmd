@@ -1,0 +1,59 @@
+---
+title: "analysis"
+author: "Team 17: Lizbeth Ramirez, Shruthi Leon, Eric Tsai, and Andrew Kim"
+format: revealjs
+---
+
+## 1. Introduction
+
+This project analyzes factors influencing song popularity using Bayesian modeling.
+
+## 2. Research Questions
+
+This analysis explores three research questions:
+
+1. What song features most strongly predict song popularity?
+2. Has the relationship between song loudness and popularity changed over time?
+3. How much of song popularity comes from artist effects?
+
+## 3. Data Preparation
+
+```{r echo=TRUE, results='hide',message=FALSE, warning=FALSE}
+# load libraries
+library(bayesrules)
+library(tidyverse)
+library(rstan)
+library(bayesplot)
+library(broom.mixed)
+
+# load dataset
+music <- read_csv("../data/music_clean.csv")
+```
+## 4. Analysis
+## Question 1: What song features most strongly predict song popularity?
+```{r}
+# EDA
+# Model
+# Results 
+```
+#### Interpretation
+
+## Question 2: Has the relationship between song loudness and popularity changed over time?
+```{r}
+# EDA
+# Model
+# Results 
+```
+#### Interpretation
+
+## Question 3: How much of song popularity comes from artist effects?
+```{r}
+# EDA
+# Model
+# Results 
+```
+#### Interpretation
+
+## 5. Conclusion
+
+

@@ -311,46 +311,102 @@ Y_i \sim N(\mu_i, \sigma) \\
 \mu_i = \beta_0 + \beta_1 \text{tempo}_i + \beta_2 \text{duration}_i + \beta_3 \text{loudness}_i
 \end{gather}
 \]</span></p>
-<p>where:</p>
-<ul>
-<li><span class="math inline">\(\beta_0\)</span> = intercept</li>
-<li><span class="math inline">\(\beta_1, \beta_2, \beta_3\)</span> = effects of song features</li>
-<li><span class="math inline">\(\sigma\)</span> = residual variation in popularity</li>
-</ul>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta_0\)</span></td>
+<td>Intercept</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\beta_1, \beta_2, \beta_3\)</span></td>
+<td>Effects of song features</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\sigma\)</span></td>
+<td>Residual variation in popularity</td>
+</tr>
+</tbody>
+</table>
+<aside class="notes">
+<p>Walk through the model structure — Y is song popularity, each beta captures the effect of one audio feature.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="prior-distributions" class="slide level2">
 <h2>Prior Distributions</h2>
-<p>Weakly informative priors are used for the regression parameters. These priors allow moderate relationships while preventing unrealistic coefficient estimates. <span class="math display">\[
-\begin{gather}
-\beta_0 \sim Normal(0,1) \\
-\beta_1, \beta_2, \beta_3 \sim Normal(0,2.5) \\
-\sigma \sim Exponential(1)
-\end{gather}
-\]</span></p>
+<p>Weakly informative priors allow moderate relationships while preventing unrealistic estimates.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Prior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta_0\)</span></td>
+<td><span class="math inline">\(Normal(0, 1)\)</span></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\beta_1, \beta_2, \beta_3\)</span></td>
+<td><span class="math inline">\(Normal(0, 2.5)\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\sigma\)</span></td>
+<td><span class="math inline">\(Exponential(1)\)</span></td>
+</tr>
+</tbody>
+</table>
+<aside class="notes">
+<p>Priors are weakly informative, they keep estimates at reasonable values but let the data take lead. Normal(0, 2.5) means we don’t expect huge effects.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="fit-the-model" class="slide level2">
 <h2>Fit the Model</h2>
-<p>This model estimates the posterior distribution of each coefficient using Markov Chain Monte Carlo (MCMC).</p>
+<p>This model estimates the posterior distribution of each coefficient using MCMC.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a>song_model1 <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(</span>
 <span id="cb2-2"><a href=""></a>  song.hotttnesss <span class="sc">~</span> song.tempo <span class="sc">+</span> song.duration <span class="sc">+</span> song.loudness,</span>
 <span id="cb2-3"><a href=""></a>  <span class="at">data =</span> music,</span>
 <span id="cb2-4"><a href=""></a>  <span class="at">family =</span> gaussian,</span>
-<span id="cb2-5"><a href=""></a></span>
-<span id="cb2-6"><a href=""></a>  <span class="at">prior_intercept =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="dv">1</span>),</span>
-<span id="cb2-7"><a href=""></a>  <span class="at">prior =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="fl">2.5</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb2-8"><a href=""></a>  <span class="at">prior_aux =</span> <span class="fu">exponential</span>(<span class="dv">1</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb2-9"><a href=""></a></span>
-<span id="cb2-10"><a href=""></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb2-11"><a href=""></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
-<span id="cb2-12"><a href=""></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
-<span id="cb2-13"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href=""></a>  <span class="at">prior_intercept =</span> <span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb2-6"><a href=""></a>  <span class="at">prior =</span> <span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">2.5</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-7"><a href=""></a>  <span class="at">prior_aux =</span> <span class="fu">exponential</span>(<span class="dv">1</span>, <span class="at">autoscale =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-8"><a href=""></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb2-9"><a href=""></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb2-10"><a href=""></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb2-11"><a href=""></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 7.3e-05 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.73 seconds.
+Chain 1: Gradient evaluation took 9.8e-05 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -367,15 +423,15 @@ Chain 1: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 1: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 1: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 0.053 seconds (Warm-up)
-Chain 1:                0.415 seconds (Sampling)
-Chain 1:                0.468 seconds (Total)
+Chain 1:  Elapsed Time: 0.047 seconds (Warm-up)
+Chain 1:                0.402 seconds (Sampling)
+Chain 1:                0.449 seconds (Total)
 Chain 1: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 Chain 2: 
-Chain 2: Gradient evaluation took 8e-06 seconds
-Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+Chain 2: Gradient evaluation took 7e-06 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 Chain 2: Adjust your expectations accordingly!
 Chain 2: 
 Chain 2: 
@@ -392,15 +448,15 @@ Chain 2: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 2: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 2: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 2: 
-Chain 2:  Elapsed Time: 0.047 seconds (Warm-up)
-Chain 2:                0.406 seconds (Sampling)
-Chain 2:                0.453 seconds (Total)
+Chain 2:  Elapsed Time: 0.044 seconds (Warm-up)
+Chain 2:                0.401 seconds (Sampling)
+Chain 2:                0.445 seconds (Total)
 Chain 2: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 Chain 3: 
-Chain 3: Gradient evaluation took 7e-06 seconds
-Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+Chain 3: Gradient evaluation took 9e-06 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
 Chain 3: Adjust your expectations accordingly!
 Chain 3: 
 Chain 3: 
@@ -417,15 +473,15 @@ Chain 3: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 3: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 3: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 3: 
-Chain 3:  Elapsed Time: 0.05 seconds (Warm-up)
-Chain 3:                0.421 seconds (Sampling)
-Chain 3:                0.471 seconds (Total)
+Chain 3:  Elapsed Time: 0.047 seconds (Warm-up)
+Chain 3:                0.399 seconds (Sampling)
+Chain 3:                0.446 seconds (Total)
 Chain 3: 
 
 SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 Chain 4: 
-Chain 4: Gradient evaluation took 7e-06 seconds
-Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
+Chain 4: Gradient evaluation took 1.2e-05 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 Chain 4: Adjust your expectations accordingly!
 Chain 4: 
 Chain 4: 
@@ -442,16 +498,29 @@ Chain 4: Iteration: 3200 / 4000 [ 80%]  (Sampling)
 Chain 4: Iteration: 3600 / 4000 [ 90%]  (Sampling)
 Chain 4: Iteration: 4000 / 4000 [100%]  (Sampling)
 Chain 4: 
-Chain 4:  Elapsed Time: 0.05 seconds (Warm-up)
-Chain 4:                0.415 seconds (Sampling)
-Chain 4:                0.465 seconds (Total)
+Chain 4:  Elapsed Time: 0.047 seconds (Warm-up)
+Chain 4:                0.398 seconds (Sampling)
+Chain 4:                0.445 seconds (Total)
 Chain 4: </code></pre>
 </div>
 </div>
+<aside class="notes">
+<p>4 chains, 4000 iterations each. autoscale = TRUE lets rstanarm rescale priors to match the data scale automatically.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="prior-specification" class="slide level2">
 <h2>Prior Specification</h2>
-<p>The prior distributions used in the model. The priors are weakly informative, allowing the data to drive estiamtes.</p>
+<p>The priors used in the model are weakly informative, letting the data drive estimates.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>Priors for model 'song_model1' 
@@ -474,64 +543,203 @@ Auxiliary (sigma)
 See help('prior_summary.stanreg') for more details</code></pre>
 </div>
 </div>
+<aside class="notes">
+<p>Priors are centered at zero, reflecting no strong prior expectation of large effects. The intercept prior allows the baseline popularity to vary moderately. Coefficients can be positive or negative, and autoscale adjusts the scale based on each predictor’s SD.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
-<section id="mcmc-diagnostics" class="slide level2">
-<h2>MCMC Diagnostics</h2>
-<p>To ensure the MCMC chains converged properly, we examine the diagnostic plots.</p>
+<section id="mcmc-diagnostics-trace-plots" class="slide level2">
+<h2>MCMC Diagnostics: Trace Plots</h2>
+<p>Chains should look like “fuzzy caterpillars” meaning they are well-mixed with no trends.</p>
+
+<img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"><aside class="notes">
+<p>The four chains mix well and fluctuate around stable values with no noticeable trends which indicates the chains have explored the posterior distribution effectively and converged successfully.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="mcmc-diagnostics-density-overlay" class="slide level2">
+<h2>MCMC Diagnostics: Density Overlay</h2>
+<p>Posterior distributions for each parameter across all 4 chains.</p>
+
+<img data-src="analysis_files/figure-revealjs/unnamed-chunk-5-1.png" width="960" class="r-stretch"><aside class="notes">
+<p>Strong overlap between all four chain densities — this confirms that all chains converged to the same posterior distribution.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="mcmc-diagnostics-autocorrelation" class="slide level2">
+<h2>MCMC Diagnostics: Autocorrelation</h2>
+<p>Low autocorrelation means the chains are exploring the posterior efficiently.</p>
+
+<img data-src="analysis_files/figure-revealjs/unnamed-chunk-6-1.png" width="960" class="r-stretch"><aside class="notes">
+<p>Autocorrelation between successive draws decreases as lag increases which is expected behavior for well-behaved MCMC sampling and indicates efficient exploration of the posterior.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="mcmc-diagnostics-rhat-n-eff" class="slide level2">
+<h2>MCMC Diagnostics: Rhat &amp; N-eff</h2>
 <div class="cell">
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-1.png" width="960"></p>
-</figure>
-</div>
-</div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-2.png" width="960"></p>
-</figure>
-</div>
-</div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="analysis_files/figure-revealjs/unnamed-chunk-4-3.png" width="960"></p>
-</figure>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  (Intercept)    song.tempo song.duration song.loudness         sigma 
-     1.232250      1.388250      1.451500      1.330500      1.474375 </code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">rhat</span>(song_model1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  (Intercept)    song.tempo song.duration song.loudness         sigma 
     0.9996798     0.9996558     0.9996623     0.9999041     0.9998327 </code></pre>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a><span class="fu">neff_ratio</span>(song_model1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept)    song.tempo song.duration song.loudness         sigma 
+     1.232250      1.388250      1.451500      1.330500      1.474375 </code></pre>
 </div>
+</div>
+<ul>
+<li><strong>Rhat</strong> close to 1 (&lt; 1.01) which indicates convergence</li>
+<li><strong>N-eff ratio</strong> &gt; 0.1 which indicates efficient sampling</li>
+</ul>
+<aside class="notes">
+<p>Effective sample size ratios are reasonably large, indicating efficient posterior sampling. R-hat values are all very close to 1, providing further evidence that the chains converged. Overall, the diagnostics confirm the posterior samples are reliable for inference.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="posterior-summary" class="slide level2">
 <h2>Posterior Summary</h2>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 5
-  term             estimate std.error   conf.low conf.high
-  &lt;chr&gt;               &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
-1 (Intercept)    0.503      0.0132     0.482     0.524    
-2 song.tempo     0.000189   0.0000750  0.0000658 0.000313 
-3 song.duration -0.00000688 0.0000243 -0.0000479 0.0000330
-4 song.loudness  0.00685    0.000521   0.00601   0.00768  </code></pre>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">term</th>
+<th style="text-align: right;">estimate</th>
+<th style="text-align: right;">std.error</th>
+<th style="text-align: right;">conf.low</th>
+<th style="text-align: right;">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">0.013</td>
+<td style="text-align: right;">0.482</td>
+<td style="text-align: right;">0.524</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">song.tempo</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">song.duration</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">song.loudness</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.008</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
+<ul>
+<li>Intercept (0.503): Baseline popularity when predictors are zero.</li>
+<li>Tempo &amp; Duration: Effects ~0; no meaningful impact on popularity.</li>
+<li>Loudness: Small positive effect, credible interval excludes zero → slight influence.</li>
+</ul>
+<aside class="notes">
+<p>The intercept (0.503) represents the expected popularity of a song when all predictors are at zero. While zero tempo or duration is not meaningful in practice, this provides a baseline for the model.</p>
+<p>Tempo and duration have posterior estimates essentially equal to zero, with credible intervals also at zero. This indicates no detectable effect of tempo or duration on song popularity in this dataset. Changes in tempo or duration do not appear to influence popularity.</p>
+<p>Loudness has a small positive effect: for every one-unit increase in loudness, the expected popularity increases by about 0.007. The 95% credible interval (0.006 – 0.008) does not include zero, indicating this effect is statistically meaningful in the Bayesian sense. However, the effect size is very small, so loudness explains only a minor portion of the variation in song popularity.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="posterior-predictive-check" class="slide level2">
 <h2>Posterior Predictive Check</h2>
+<p>Most simulated distributions follow the observed data. There’s a slight difference at lower popularity values (0.1-0.2). Model fits reasonably well overall, but may not fully capture the extremes of very low popularity.</p>
 
-<img data-src="analysis_files/figure-revealjs/unnamed-chunk-6-1.png" width="960" class="r-stretch"></section>
+<img data-src="analysis_files/figure-revealjs/unnamed-chunk-9-1.png" width="960" class="r-stretch"><aside class="notes">
+<p>The comparison of the observed and posterior simulated music data indicates that the features have some useful information about song popularity, but they aren’t driving predictors.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
 <section id="interpretation" class="slide level2">
 <h2>Interpretation</h2>
-<p>The Bayesian regression analysis suggests that tempo, duration, and loudness have limited predictive power for explaining song popularity on their own. While these musical features possibly have some contribution to song popularity, the large variability indicates that other factors play a bigger role.</p>
-<p>These factors possibly include artist-level details such as artist popularity, artist familiarity, or location. Future models could incorporate additional variables to better understand the complexities of song popularity.</p>
+<blockquote>
+<p>Tempo, duration, and loudness have <strong>limited predictive power</strong> for song popularity on their own.</p>
+</blockquote>
+<ul>
+<li>Credible intervals for all three predictors overlap zero</li>
+<li>Large residual variance <span class="math inline">\(\sigma\)</span> suggests other factors dominate</li>
+<li>Likely missing variables: artist popularity, familiarity, location</li>
+</ul>
+<p><strong>Future work:</strong> incorporate artist-level features to better explain popularity</p>
 </section></section>
 <section id="question-2-has-the-relationship-between-song-loudness-and-popularity-changed-over-time" class="title-slide slide level1 center">
 <h1>Question 2: Has the relationship between song loudness and popularity changed over time?</h1>
@@ -547,7 +755,6 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <h2>5. Conclusion</h2>
 <h3 id="results">Results</h3>
 <h3 id="limitations">Limitations</h3>
-<h3 id="future-research">Future Research</h3>
 
 </section></section>
     </div>

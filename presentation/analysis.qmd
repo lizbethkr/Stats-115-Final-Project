@@ -116,71 +116,152 @@ Y_i \sim N(\mu_i, \sigma) \\
 \end{gather}
 $$
 
-where: 
+| Parameter | Description |
+|-----------|-------------|
+| $\beta_0$ | Intercept |
+| $\beta_1, \beta_2, \beta_3$ | Effects of song features |
+| $\sigma$ | Residual variation in popularity |
 
-- $\beta_0$ = intercept
-- $\beta_1, \beta_2, \beta_3$ = effects of song features
-- $\sigma$ = residual variation in popularity
+::: {.notes}
+Walk through the model structure — Y is song popularity, each beta captures the effect of one audio feature.
+:::
 
 ## Prior Distributions
-Weakly informative priors are used for the regression parameters. These priors allow moderate relationships while preventing unrealistic coefficient estimates.
-$$
-\begin{gather}
-\beta_0 \sim Normal(0,1) \\
-\beta_1, \beta_2, \beta_3 \sim Normal(0,2.5) \\
-\sigma \sim Exponential(1)
-\end{gather}
-$$
 
-## Fit the Model 
+Weakly informative priors allow moderate relationships while preventing unrealistic estimates.
 
-This model estimates the posterior distribution of each coefficient using Markov Chain Monte Carlo (MCMC).
+| Parameter | Prior |
+|-----------|-------|
+| $\beta_0$ | $Normal(0, 1)$ |
+| $\beta_1, \beta_2, \beta_3$ | $Normal(0, 2.5)$ |
+| $\sigma$ | $Exponential(1)$ |
+
+::: {.notes}
+Priors are weakly informative, they keep estimates at reasonable values but let the data take lead. Normal(0, 2.5) means we don't expect huge effects.
+:::
+
+## Fit the Model
+
+This model estimates the posterior distribution of each coefficient using MCMC.
 ```{r}
 #| echo: true
 song_model1 <- stan_glm(
   song.hotttnesss ~ song.tempo + song.duration + song.loudness,
   data = music,
   family = gaussian,
-
-  prior_intercept = normal(0,1),
-  prior = normal(0,2.5, autoscale = TRUE),
+  prior_intercept = normal(0, 1),
+  prior = normal(0, 2.5, autoscale = TRUE),
   prior_aux = exponential(1, autoscale = TRUE),
-
   chains = 4,
   iter = 4000,
   seed = 123
 )
 ```
+
+::: {.notes}
+4 chains, 4000 iterations each. autoscale = TRUE lets rstanarm rescale priors to match the data scale automatically.
+:::
+
 ## Prior Specification
-The prior distributions used in the model. The priors are weakly informative, allowing the data to drive estiamtes.
+
+The priors used in the model are weakly informative, letting the data drive estimates.
 ```{r}
 prior_summary(song_model1)
 ```
 
-## MCMC Diagnostics 
-To ensure the MCMC chains converged properly, we examine the diagnostic plots.
+::: {.notes}
+Priors are centered at zero, reflecting no strong prior expectation of large effects. The intercept prior allows the baseline popularity to vary moderately. Coefficients can be positive or negative, and autoscale adjusts the scale based on each predictor's SD.
+:::
+
+## MCMC Diagnostics: Trace Plots
+
+Chains should look like "fuzzy caterpillars" meaning they are well-mixed with no trends.
 ```{r}
+#| fig-height: 4
 mcmc_trace(song_model1, size = 0.2)
-mcmc_dens_overlay(song_model1)
-mcmc_acf(song_model1)
-neff_ratio(song_model1)
-rhat(song_model1)
 ```
+
+::: {.notes}
+The four chains mix well and fluctuate around stable values with no noticeable trends which indicates the chains have explored the posterior distribution effectively and converged successfully.
+:::
+
+## MCMC Diagnostics: Density Overlay
+
+Posterior distributions for each parameter across all 4 chains.
+```{r}
+#| fig-height: 4
+mcmc_dens_overlay(song_model1)
+```
+
+::: {.notes}
+Strong overlap between all four chain densities — this confirms that all chains converged to the same posterior distribution.
+:::
+
+## MCMC Diagnostics: Autocorrelation
+
+Low autocorrelation means the chains are exploring the posterior efficiently.
+```{r}
+#| fig-height: 4
+mcmc_acf(song_model1)
+```
+
+::: {.notes}
+Autocorrelation between successive draws decreases as lag increases which is expected behavior for well-behaved MCMC sampling and indicates efficient exploration of the posterior.
+:::
+
+## MCMC Diagnostics: Rhat & N-eff
+```{r}
+#| echo: true
+rhat(song_model1)
+neff_ratio(song_model1)
+```
+
+- **Rhat** close to 1 (< 1.01) which indicates convergence
+- **N-eff ratio**  > 0.1 which indicates efficient sampling
+
+::: {.notes}
+Effective sample size ratios are reasonably large, indicating efficient posterior sampling. R-hat values are all very close to 1, providing further evidence that the chains converged. Overall, the diagnostics confirm the posterior samples are reliable for inference.
+:::
 
 ## Posterior Summary
 ```{r}
-tidy(song_model1, conf.int = TRUE)
+tidy(song_model1, conf.int = TRUE) %>%
+  mutate(across(where(is.numeric), round, 3)) %>%
+  knitr::kable()
 ```
 
+- Intercept (0.503): Baseline popularity when predictors are zero.
+- Tempo & Duration: Effects ~0; no meaningful impact on popularity.
+- Loudness: Small positive effect, credible interval excludes zero → slight influence.
+
+::: {.notes}
+The intercept (0.503) represents the expected popularity of a song when all predictors are at zero. While zero tempo or duration is not meaningful in practice, this provides a baseline for the model.
+
+Tempo and duration have posterior estimates essentially equal to zero, with credible intervals also at zero. This indicates no detectable effect of tempo or duration on song popularity in this dataset. Changes in tempo or duration do not appear to influence popularity.
+
+Loudness has a small positive effect: for every one-unit increase in loudness, the expected popularity increases by about 0.007. The 95% credible interval (0.006 – 0.008) does not include zero, indicating this effect is statistically meaningful in the Bayesian sense. However, the effect size is very small, so loudness explains only a minor portion of the variation in song popularity.
+:::
+
 ## Posterior Predictive Check
+
+Most simulated distributions follow the observed data. There's a slight difference at lower popularity values (0.1-0.2). Model fits reasonably well overall, but may not fully capture the extremes of very low popularity. 
 ```{r}
 pp_check(song_model1)
 ```
 
-## Interpretation
-The Bayesian regression analysis suggests that tempo, duration, and loudness have limited predictive power for explaining song popularity on their own. While these musical features possibly have some contribution to song popularity, the large variability indicates that other factors play a bigger role.
+::: {.notes}
+The comparison of the observed and posterior simulated music data indicates that the features have some useful information about song popularity, but they aren't driving predictors. 
+:::
 
-These factors possibly include artist-level details such as artist popularity, artist familiarity, or location. Future models could incorporate additional variables to better understand the complexities of song popularity.
+## Interpretation
+
+> Tempo, duration, and loudness have **limited predictive power** for song popularity on their own.
+
+- Credible intervals for all three predictors overlap zero
+- Large residual variance $\sigma$ suggests other factors dominate
+- Likely missing variables: artist popularity, familiarity, location
+
+**Future work:** incorporate artist-level features to better explain popularity
 
 
 # Question 2: Has the relationship between song loudness and popularity changed over time?
@@ -194,5 +275,3 @@ These factors possibly include artist-level details such as artist popularity, a
 ### Results
 
 ### Limitations
-
-### Future Research

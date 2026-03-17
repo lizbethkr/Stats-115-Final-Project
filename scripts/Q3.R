@@ -71,3 +71,49 @@ music_clean %>%
     plot.title = element_text(face = "bold", size = 14),
     axis.text.x = element_text(size = 11)
   )
+
+# 1. Prepare the data (remove NAs)
+music_model_data <- music_clean %>%
+  filter(!is.na(song.hotttnesss) & !is.na(artist.name))
+
+# 2. FIT THE MODEL (This creates the 'artist_model' object)
+# Note: Because this is a Bayesian model with MCMC sampling, 
+# it will take a little bit of time to run. Let it finish!
+artist_model <- stan_glmer(
+  song.hotttnesss ~ 1 + (1 | artist.name),
+  data = music_model_data,
+  family = gaussian(),
+  prior_intercept = normal(0.5, 2.5, autoscale = TRUE),
+  chains = 4, 
+  iter = 2000, 
+  seed = 115
+)
+
+# You can verify the model was created successfully by running:
+summary(artist_model)
+
+# Extract the variance components from the model posterior
+variance_draws_long <- as.data.frame(artist_model) %>%
+  select(
+    `Within-Artist (sigma_y)` = sigma,
+    `Between-Artist (sigma_mu)` = `Sigma[artist.name:(Intercept),(Intercept)]`
+  ) %>%
+  pivot_longer(
+    cols = everything(), 
+    names_to = "Variance_Type", 
+    values_to = "Standard_Deviation"
+  )
+
+# Plot the overlapping densities
+ggplot(variance_draws_long, aes(x = Standard_Deviation, fill = Variance_Type)) +
+  geom_density(alpha = 0.6) +
+  scale_fill_manual(values = c("darkorange", "darkblue")) +
+  labs(
+    title = "Where does the variation in song popularity come from?",
+    subtitle = "Comparing Between-Artist vs. Within-Artist Standard Deviations",
+    x = "Standard Deviation (Posterior Draws)",
+    y = "Density",
+    fill = "Source of Variation"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")

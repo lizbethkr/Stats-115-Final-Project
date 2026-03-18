@@ -269,8 +269,273 @@ The comparison of the observed and posterior simulated music data indicates that
 
 # Question 2: Has the relationship between song loudness and popularity changed over time?
 
-
 # Question 3: How much of song popularity comes from artist effects?
+
+## Question Introduction
+
+To investigate how much of song popularity is driven by artist identity rather than song features, we fit a Bayesian hierarchical model. Song popularity (`song.hotttnesss`) ranges from 0 to 1. We group songs by artist and estimate how much variance is explained at the artist level using a random intercepts model.
+
+-   **Within-artist variation**: differences between songs by the same artist
+-   **Between-artist variation**: differences in average popularity across artists
+
+## Exploratory Data Analysis
+
+Before fitting the model, we identified artists with highly similar sound profiles to isolate artist identity as the key variable.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# --- Setup: build chosen_artists ---
+artist_stats <- music %>%
+  drop_na(artist.name, song.hotttnesss, song.tempo, song.loudness, song.duration) %>%
+  group_by(artist.name) %>%
+  summarize(
+    n_songs = n(),
+    mean_pop = mean(song.hotttnesss),
+    mean_tempo = mean(song.tempo),
+    mean_loudness = mean(song.loudness),
+    mean_duration = mean(song.duration)
+  ) %>%
+  filter(n_songs >= 5)
+
+scaled_features <- artist_stats %>%
+  mutate(
+    z_tempo = as.numeric(scale(mean_tempo)),
+    z_loudness = as.numeric(scale(mean_loudness)),
+    z_duration = as.numeric(scale(mean_duration))
+  )
+
+target_artist_name <- "Thrice"
+
+target_params <- scaled_features %>%
+  filter(artist.name == target_artist_name) %>%
+  select(z_tempo, z_loudness, z_duration)
+
+chosen_artists <- scaled_features %>%
+  mutate(
+    distance = sqrt(
+      (z_tempo - target_params$z_tempo)^2 +
+        (z_loudness - target_params$z_loudness)^2 +
+        (z_duration - target_params$z_duration)^2
+    )
+  ) %>%
+  arrange(distance) %>%
+  slice(1:4) %>%
+  pull(artist.name)
+
+# --- Plot ---
+music %>%
+  filter(artist.name %in% chosen_artists) %>%
+  drop_na(song.hotttnesss) %>%
+  ggplot(aes(x = reorder(artist.name, song.hotttnesss, FUN = median), y = song.hotttnesss)) +
+  geom_boxplot(fill = "lightcyan", outlier.shape = NA) +
+  geom_jitter(color = "darkblue", alpha = 0.5, width = 0.15, height = 0) +
+  labs(
+    title = "Song Popularity for Artists with Highly Similar Sound Profiles",
+    subtitle = "Comparing artists matched by average tempo, loudness, and duration",
+    x = "Artist",
+    y = "Song Popularity (hotttnesss)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(size = 11)
+  )
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+music %>%
+  filter(artist.name %in% chosen_artists) %>%
+  drop_na(song.hotttnesss) %>%
+  ggplot(aes(x = reorder(artist.name, song.hotttnesss, FUN = median), y = song.hotttnesss)) +
+  geom_boxplot(fill = "lightcyan", outlier.shape = NA) +
+  geom_jitter(color = "darkblue", alpha = 0.5, width = 0.15, height = 0) +
+  labs(
+    title = "Song Popularity for Artists with Highly Similar Sound Profiles",
+    subtitle = "Comparing artists matched by average tempo, loudness, and duration",
+    x = "Artist",
+    y = "Song Popularity (hotttnesss)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(size = 11)
+  )
+```
+
+::: notes
+These four artists have nearly identical tempo, loudness, and duration profiles — yet their popularity distributions are very different. This motivates the question: is artist identity itself driving popularity?
+:::
+
+## Bayesian Hierarchical Model
+
+$$
+\begin{gather}
+Y_{ij} \sim N(\mu_{ij}, \sigma) \\
+\mu_{ij} = \beta_0 + b_j \\
+b_j \sim N(0, \sigma_{\text{artist}})
+\end{gather}
+$$
+
+| Parameter                | Description                          |
+|--------------------------|--------------------------------------|
+| $\beta_0$                | Global mean popularity               |
+| $b_j$                    | Artist-specific random intercept     |
+| $\sigma$                 | Within-artist (song-level) variation |
+| $\sigma_{\text{artist}}$ | Between-artist variation             |
+
+::: notes
+Each artist gets their own intercept b_j, which shifts their expected popularity up or down from the global mean. The ICC tells us what fraction of total variance comes from these artist-level shifts.
+:::
+
+## Prior Distributions
+
+Weakly informative priors allow moderate artist effects while preventing unrealistic estimates.
+
+| Parameter                | Prior            |
+|--------------------------|------------------|
+| $\beta_0$                | $Normal(0.5, 1)$ |
+| $\sigma_{\text{artist}}$ | $Exponential(1)$ |
+| $\sigma$                 | $Exponential(1)$ |
+
+::: notes
+We center the intercept prior at 0.5 since popularity is bounded between 0 and 1. The exponential priors on both variance components keep estimates positive and let the data determine how much variation sits at the artist vs song level.
+:::
+
+## Fit the Model
+
+```{r}
+#| echo: true
+#| cache: true
+
+# Step 1: prepare data BEFORE passing to stan_glmer
+music_model <- music %>%
+  drop_na(artist.name, song.hotttnesss) %>%
+  group_by(artist.name) %>%
+  filter(n() >= 5) %>%
+  ungroup()
+
+# Step 2: fit model using the clean dataset
+model_q3 <- stan_glmer(
+  song.hotttnesss ~ (1 | artist.name),
+  data = music_model,
+  family = gaussian,
+  prior_intercept = normal(0.5, 1),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4,
+  iter = 4000,
+  seed = 123
+)
+```
+
+::: notes
+The (1 \| artist.name) syntax fits a random intercept per artist. 4 chains, 5000 iterations. autoscale adjusts the prior scale to match the data automatically.
+:::
+
+## MCMC Diagnostics
+
+Chains are well mixed with no trends and R hat\>1 confirms convergence.
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| fig-height: 4
+#| echo: false
+mcmc_trace(model_q3,
+           pars = c("(Intercept)",
+                    "sigma",
+                    "Sigma[artist.name:(Intercept),(Intercept)]",
+                    "b[(Intercept) artist.name:30_Seconds_To_Mars]",
+                    "b[(Intercept) artist.name:Kraftwerk]",
+                    "b[(Intercept) artist.name:Thrice]",
+                    "b[(Intercept) artist.name:Muse]",
+                    "b[(Intercept) artist.name:Jacques_Dutronc]",
+                    "b[(Intercept) artist.name:Coldplay]",
+                    "b[(Intercept) artist.name:Los_Fabulosos_Cadillacs]",
+                    "b[(Intercept) artist.name:David_Arkenstone]"),
+           size = 0.2)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig-height: 4
+
+mcmc_dens_overlay(model_q3,
+                  pars = c("(Intercept)",
+                           "sigma",
+                           "Sigma[artist.name:(Intercept),(Intercept)]",
+                           "b[(Intercept) artist.name:30_Seconds_To_Mars]",
+                           "b[(Intercept) artist.name:Kraftwerk]",
+                           "b[(Intercept) artist.name:Thrice]",
+                           "b[(Intercept) artist.name:Muse]",
+                           "b[(Intercept) artist.name:Jacques_Dutronc]",
+                           "b[(Intercept) artist.name:Coldplay]",
+                           "b[(Intercept) artist.name:Los_Fabulosos_Cadillacs]",
+                           "b[(Intercept) artist.name:David_Arkenstone]"))
+```
+:::
+:::::
+
+```{r}
+#| echo: true
+rhat(model_q3)
+neff_ratio(model_q3)
+```
+
+::: notes
+Rhat close to 1 confirms convergence. Strong density overlap across chains confirms they all explored the same posterior. N-eff ratios above 0.1 indicate efficient sampling.
+:::
+
+## Posterior Predictive Check
+
+```{r}
+pp_check(model_q3)
+```
+
+The model captures the overall shape of the popularity distribution well. Some underfitting at the extremes is expected since song-level features are not included.
+
+::: notes
+The posterior predictive check confirms the hierarchical model produces realistic popularity distributions. Deviations at the tails suggest there are additional song-level predictors worth including in future models.
+:::
+
+## Variance Components: Artist vs Song
+
+```{r}
+#| echo: false
+tidy(model_q3, effects = "ran_pars") %>%
+  mutate(
+    Component = c("Between-Artist (Sigma)", "Within-Artist (Sigma)"),
+    Estimate = round(estimate, 3),
+    Interpretation = c("How much artists differ in avg popularity",
+                       "How much songs vary within the same artist")
+  ) %>%
+  select(Component, Estimate, Interpretation) %>%
+  knitr::kable() %>%
+  kable_styling(font_size = 20)
+```
+
+-   **Between-artist (0.129)**: artist identity shifts expected popularity up or down from the global mean
+-   **Within-artist (0.113)**: even within the same artist, individual songs vary considerably in hotttnesss
+-   Artist identity accounts for **\~53%** of total variance $(0.129 / (0.129 + 0.113))$
+
+::: notes
+The two sigmas are close but between-artist edges out within-artist — meaning the biggest single predictor of a song's popularity is simply who made it, not what it sounds like.
+:::
+
+## Interpretation
+
+> Artist identity explains a **meaningful share** of song popularity variance, independent of musical features.
+
+-   Between-artist (0.129) exceeds within-artist (0.113) variation, **\~53% of popularity differences are driven by artist identity alone.**
+-   Well-mixed trace plots and Rhat ≈ 1 confirm reliable estimates for all artist popularity shifts.
+-   PPC fits well at 0.5–0.6 but misses at extremes (0.0/0.9), showing artist identity best explains mid-range popularity.
 
 
 ## 5. Conclusion

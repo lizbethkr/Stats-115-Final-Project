@@ -269,6 +269,65 @@ The comparison of the observed and posterior simulated music data indicates that
 
 # Question 2: Has the relationship between song loudness and popularity changed over time?
 
+<<<<<<< HEAD
+=======
+## Model
+
+$$
+Y_i = \beta_0 + \beta_1 \text{loudness}_i + \beta_2 \text{year}_i + \beta_3 (\text{loudness}_i \times \text{year}_i)
+$$
+
+- $\beta_3$ = change in loudness effect over time
+
+---
+
+## Fit the Model
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+music_q2 <- music %>%
+  filter(song.year > 0, song.hotttnesss > 0) %>%
+  mutate(
+    year_centered = song.year - mean(song.year),
+    loudness_centered = song.loudness - mean(song.loudness)
+  )
+
+model_loudness_year <- stan_glm(
+  song.hotttnesss ~ loudness_centered * year_centered,
+  data = music_q2,
+  family = gaussian,
+  prior_intercept = normal(0, 1),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4,
+  iter = 4000,
+  seed = 123
+)
+```
+
+## Results
+```{r 0}
+mcmc_intervals(
+  as.matrix(model_loudness_year),
+  pars = c(
+    "loudness_centered",
+    "year_centered",
+    "loudness_centered:year_centered"
+  )
+)
+```
+
+---
+
+## Posterior Prediction Visualization
+
+![](analysis_files/figure-revealjs/shruthiq2image.png){width=65%}
+
+::: {.notes}
+This posterior prediction plot shows the relationship between loudness and predicted popularity at earlier, average, and later years. The lines are nearly parallel, which supports the conclusion that the effect of loudness on popularity has remained relatively stable over time.
+:::
+
+
+>>>>>>> 5efde14 (added question 2 analysis + graphs)
 # Question 3: How much of song popularity comes from artist effects?
 
 ## Question Introduction

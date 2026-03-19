@@ -269,7 +269,6 @@ The comparison of the observed and posterior simulated music data indicates that
 
 # Question 2: Has the relationship between song loudness and popularity changed over time?
 
-<<<<<<< HEAD
 =======
 ## Model
 
@@ -326,8 +325,6 @@ mcmc_intervals(
 This posterior prediction plot shows the relationship between loudness and predicted popularity at earlier, average, and later years. The lines are nearly parallel, which supports the conclusion that the effect of loudness on popularity has remained relatively stable over time.
 :::
 
-
->>>>>>> 5efde14 (added question 2 analysis + graphs)
 # Question 3: How much of song popularity comes from artist effects?
 
 ## Question Introduction
